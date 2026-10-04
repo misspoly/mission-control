@@ -23,30 +23,44 @@ export const privileged = definePrivilegedContracts({
 
 export const privilegedHandlers = definePrivilegedHandlers(privileged, {
   async readJournal() {
+    const { readFile } = await import("node:fs/promises");
+    const { homedir } = await import("node:os");
+    const { join } = await import("node:path");
+    const path = join(homedir(), "workspace", "mission-control", "attention.json");
+    let raw: string;
     try {
-      const { readFile } = await import("node:fs/promises");
-      const { homedir } = await import("node:os");
-      const { join } = await import("node:path");
-      const path = join(homedir(), "workspace", "mission-control", "attention.json");
-      const raw = await readFile(path, "utf8");
-      const parsed: unknown = JSON.parse(raw);
-      const list = Array.isArray(parsed) ? parsed : [];
-      const entries = list
-        .filter(
-          (e): e is { severity: "action" | "warn" | "info"; text: string } =>
-            typeof e === "object" &&
-            e !== null &&
-            "severity" in e &&
-            "text" in e &&
-            typeof (e as { text?: unknown }).text === "string" &&
-            ["action", "warn", "info"].includes(
-              String((e as { severity?: unknown }).severity),
-            ),
-        )
-        .map((e) => ({ severity: e.severity, text: e.text }));
-      return { entries, source: "workspace/mission-control/attention.json" };
-    } catch {
-      return { entries: [], source: "workspace/mission-control/attention.json" };
+      raw = await readFile(path, "utf8");
+    } catch (e) {
+      const code = (e as NodeJS.ErrnoException)?.code;
+      // A missing journal file is a legitimately empty journal, not an
+      // outage — the worker simply hasn't written one yet.
+      if (code === "ENOENT") {
+        return { entries: [], source: "workspace/mission-control/attention.json" };
+      }
+      throw new Error("journal unavailable: cannot read journal file");
     }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new Error("journal unavailable: journal file is not valid JSON");
+    }
+    if (!Array.isArray(parsed)) {
+      throw new Error("journal unavailable: journal file has unexpected shape");
+    }
+    const entries = parsed
+      .filter(
+        (e): e is { severity: "action" | "warn" | "info"; text: string } =>
+          typeof e === "object" &&
+          e !== null &&
+          "severity" in e &&
+          "text" in e &&
+          typeof (e as { text?: unknown }).text === "string" &&
+          ["action", "warn", "info"].includes(
+            String((e as { severity?: unknown }).severity),
+          ),
+      )
+      .map((e) => ({ severity: e.severity, text: e.text }));
+    return { entries, source: "workspace/mission-control/attention.json" };
   },
 });

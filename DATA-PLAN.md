@@ -167,3 +167,171 @@ derives from the real snapshot + the real clock.
   bar share the amber) and clears automatically on the next ingest.
 - **Skeletons**: first load only — the 30s poll never re-skeletons;
   snapshot changes animate via tweened numbers instead.
+
+## Power features (2026-10-04, Pass C)
+
+Client-only; no contract change, no invented data — every palette
+result, card action, and shortcut target resolves to fields of the
+same snapshots (latest + last 12 history) the wall already loads.
+
+- **Command palette (⌘K/Ctrl+K, header search button)**: fuzzy search
+  over schedules (title/id/code/status), attention items, view/jump
+  targets, session filter toggles, CSV exports (activity log, per-unit
+  runs), task-ID copy, and time travel. Static ranking only — failed,
+  running, pending, paused, active, disabled, alphabetical tie-break —
+  plus a 30-second "recently viewed" boost tracked in session state.
+  Navigation & inspection only: nothing in the palette mutates backend
+  state. Highlighting a task previews its status badge, cadence, next
+  run, a recent-runs sparkline, and its last activity-log lines (all
+  from history). ⌘+Enter / long-press pins a task to a session tray.
+- **Shortcuts**: 1/2/3 views (as before), ? help overlay, F cycles the
+  fleet filter (now including a FAILED filter), Esc unwinds one layer
+  (help → palette → time travel → selection). Desktop hint bar under
+  the header; "?" button serves small screens.
+- **Narrative attention cards**: failures, correlated failures, and
+  disabled-but-scheduled anomalies become WHAT → WHY → ACTION cards.
+  WHY lines are computed only from history (failure streaks across
+  distinct runs, last success, failures within 2 min of another unit);
+  no computable why → no why line. Unmatched attention items stay a
+  quiet list with the existing server-backed Dismiss; cards dismiss
+  per session only.
+- **Time travel**: palette offers "Timeline: N minutes ago" only when
+  a real history snapshot answers it; the wall then renders that
+  snapshot read-only under a TIME TRAVEL banner (live ingest watch and
+  toasts keep tracking the newest snapshot underneath).
+- **Mobile grammar**: palette is full-screen, filters are a sticky
+  horizontal scroll-snap carousel of 44px chips under the measured
+  sticky header, timeline keeps native scrolling, 3D touch stays
+  OrbitControls defaults (drag orbit, pinch zoom, tap select).
+
+## Reliability + Improvement centers (2026-10-04, Phase 7)
+
+- **Reliability Center** (`getReliability` action, read-only): derives
+  failed runs (distinct `lastRunAt` failures, failure frequency,
+  consecutive streaks), overdue schedules (latest snapshot, `now -
+  lastRunAt > 2×` cadence-derived interval; skipped when `lastRunAt`
+  or a parseable cadence is missing), and failed→completed recoveries
+  (both run timestamps) from the stored snapshot history (≤48 rows).
+  Filter chips All / Failed / Overdue / Recovered match the fleet
+  filter UX; empty states state plainly when history is thin. No new
+  write surface; `ingestSnapshot` / `getDashboard` contracts and the
+  `takenAt` dedup key are unchanged.
+- **Improvement Center** (`improvements` table, migration 0006):
+  lifecycle proposed → testing → verified plus rejected / regressed /
+  rolled-back via `proposeImprovement`, `updateImprovementStatus`,
+  and `listImprovements`. Terminal transitions require a result and a
+  verification note (enforced server-side); credential-like values are
+  rejected so secrets are never stored. Seeded on first read (when the
+  table is empty) with exactly the three real 2026-10-04 project
+  entries: P1-1 error boundary, P1-2 idempotent ingest, and Phase 5
+  observability — all verified, with their real problems, discoveries,
+  solutions, and results.
+- **Navigation**: Operations / Reliability / Improvements tabs (keys
+  4/5, Esc returns to Operations), also reachable from the command
+  palette; existing 3D/2D/24H views, filters, attention, and health
+  strip are untouched.
+
+## Audit hardening (2026-10-04, Phases 3–6)
+
+- **Phase 3 — P1 fixes.** (1) Localized error boundaries around the
+  stage and fleet regions with Retry (no full-app crash on a render
+  failure). (2) Idempotent snapshot ingestion: malformed records are
+  repaired or skipped during normalization; snapshot identity is
+  `takenAt` (unique constraint + upsert refreshes the existing row,
+  migration 0004 collapses pre-existing duplicates by `takenAt`).
+  Independently verified 2026-10-04: the same payload pushed twice
+  returned the same row id (291), the probe appeared exactly once, and
+  zero duplicate `takenAt` values existed in the 12-row history window.
+- **Phases 5/6 — observability / health model.** `ingest_meta`
+  watermark table plus `ingestHealth.lastIngestAt` /
+  `ingestHealth.ageSec` on `getDashboard`; `dataQuality` (`ok` /
+  `degraded`) with `degradedRowId`; distinct `DATA DEGRADED` and
+  `JOURNAL UNAVAILABLE` UI states; attention-dismissal audit trail;
+  health strip for INGEST / DATA / JOURNAL / LINK. Data contracts
+  unchanged.
+
+## Performance hardening (2026-10-04, Phase 8)
+
+- Client-only. The 200ms clock/freshness tick is isolated into tiny
+  components (`DhakaClock`, `FreshnessText`, `FreshnessTrack`,
+  `useNowMs`); 2D orbit motion and parallax write transforms directly
+  to DOM refs via `requestAnimationFrame` instead of React state;
+  Three.js scene re-sync is gated by a structural key (snapshot /
+  selection / core-state changes). Ambient animation stays on
+  transform/opacity/canvas paths. Also fixed a reliability-logic nit:
+  disabled schedules are excluded from the overdue calculation.
+
+## Premium 3D pass (2026-10-04, Pass 3D-1)
+
+- Depth system (six layers/tokens), quiet grid, atmospheric glow,
+  particles, fog/vignette; physical glass/metal card language;
+  restrained bloom (later tuned 0.32 → 0.18 in the UX pass); AI core
+  states ONLINE / THINKING / EXECUTING / WAITING / ERROR / LEARNING
+  driven by real signals. A distinct non-operational `NO SIGNAL` state
+  (dim, desaturated, static) shows before the first real snapshot and
+  is never treated as an asserted operational state. Mobile uses a
+  lighter render tier / 2D fallback. Rendered visual QA from the
+  builder environment was unavailable (organization policy blocks the
+  artifact URL in the managed browser).
+
+## Full UI/UX redesign (2026-10-04)
+
+- Per the owner's 30-point brief + reference mockup + 13-page UI
+  materials catalog. Header with MISSION CONTROL branding, LIVE pill,
+  real animated counters, search, notifications/help/avatar, Dhaka
+  clock. Desktop icon rail (Ops / Activity / 24H / Reliability /
+  Improve / Fleet / Logs). System health strip (CORE + INGEST pills,
+  DATA / JOURNAL / LINK states). Hero 3D agent universe with dynamic
+  real schedule nodes on three orbital layers. Views: 3D, 2D, 24H,
+  Reliability, Improvement, plus a new ACTIVITY stream. Current-task
+  strip, failed-agent alert, Next Up countdowns, live activity rail,
+  agent detail (desktop drawer / mobile bottom sheet). Fleet demoted
+  to a full-width schedule deck with search and filters
+  ALL / ACTIVE / RUNNING / PENDING / PAUSED / FAILED / DISABLED.
+  Mobile-first at 390px with no horizontal overflow; WCAG-AA contrast,
+  visible focus, keyboard support, 44px touch targets,
+  `prefers-reduced-motion` preserved.
+- **Data honesty held:** the mockup's invented figures (success rates,
+  execution counts, avg runtimes) were not implemented; no Run/Pause/
+  Settings actions exist where the backend exposes none. Backend,
+  actions, schema, and data flow untouched. `getDashboard` and
+  `getReliability` re-verified working after the redesign; full
+  interaction-level regression was not independently confirmable from
+  the builder environment.
+
+## Evolving system (2026-10-04)
+
+- Infrastructure-only pass; the default dashboard appearance is
+  unchanged. New code lives in `client/src/evolving.tsx` plus small
+  hooks in `App.tsx` / `OrbitalScene3D.tsx`.
+- **Performance monitor** (`perfMonitor`, `measureAction`):
+  page-load / DOM-ready times, frame rate, 3D scene FPS, JS heap where
+  exposed, long tasks (>50ms), failed requests, JS errors, per-action
+  latency, render-frequency counters. Surfaced in a discreet
+  Diagnostics view (Ctrl+Shift+D or the command palette) — real
+  measured values only, no synthetic data.
+- **Adaptive 3D tiers**: PERFORMANCE / BALANCED / HIGH / ULTRA
+  (particle count, bloom on/off + strength, pixel-ratio cap,
+  connection animation, lighting basic→advanced). Auto-selected from
+  device capability plus a rolling-FPS adjustment; a manual override
+  is persisted locally. The pre-existing sustained-low-FPS 2D
+  fallback is untouched.
+- **Modular 3D engine**: six independently toggleable modules —
+  orbital layers, particle fields, data streams/beams, holographic
+  rings, energy pulses, background grid.
+- **Feature flags**: `ENABLE_3D_PARTICLES`, `ENABLE_DYNAMIC_ORBITS`,
+  `ENABLE_ADVANCED_LIGHTING`, `ENABLE_ADAPTIVE_RENDERING`.
+- **Design versioning + rollback**: the visual configuration is a
+  serializable `VisualConfig` (`VISUAL_CONFIG_V1` → `VISUAL_CONFIG_V1.1`);
+  applying a change first preserves the current config as the rollback
+  target; rollback restores it. Never overwrites the stable config
+  without keeping a rollback.
+- **UX auditor (advisory only)**: evaluates FPS trends, failed
+  actions, long tasks, re-render hotspots, responsiveness,
+  accessibility, complexity, and consistency; emits plain-language
+  suggestions labeled machine-generated. It never modifies production
+  code — every suggestion ends with "No change was made automatically."
+- Builder-attested; the pass's own content critique noted only
+  partial confirmation of every evolving-system internal (truncated
+  sources), so runtime behavior of diagnostics/tiers/auditor awaits
+  the owner's in-browser verification.

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
@@ -6,6 +6,7 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { TIER_PARAMS, type QualityTier, type VisualConfig } from "./evolving";
 
 /**
  * True-3D orbital ops stage (Three.js/WebGL).
@@ -30,6 +31,24 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
 export type SceneNodeState = "active" | "paused" | "disabled" | "failed" | "pending" | "running";
 
+/** Six-state AI core visual (PASS 1) — App derives it truthfully from
+    real signals (see deriveCoreState); the scene only renders it.
+    NO_SIGNAL is not a seventh state: it is the non-operational
+    presentation shown before the first snapshot exists (dim slate
+    tint, static — no breathing pulse), so the wall never asserts an
+    operational state without data. */
+export type CoreVisual = "ONLINE" | "THINKING" | "EXECUTING" | "WAITING" | "ERROR" | "LEARNING" | "NO_SIGNAL";
+
+const CORE_HEX: Record<CoreVisual, number> = {
+  ONLINE: 0x5cc6da,
+  THINKING: 0x8ec9dc,
+  EXECUTING: 0x4ecf8f,
+  WAITING: 0x8ab4d6,
+  ERROR: 0xe86a7c,
+  LEARNING: 0xb3a3d8,
+  NO_SIGNAL: 0x64768c,
+};
+
 export type SceneNode = {
   id: string;
   code: string;
@@ -43,12 +62,12 @@ export type SceneNode = {
 };
 
 const STATE_HEX: Record<SceneNodeState, number> = {
-  active: 0x00ff88,
-  paused: 0xffb24d,
+  active: 0x4ecf8f,
+  paused: 0xe8a84d,
   disabled: 0x8899aa,
-  failed: 0xff2d55,
-  pending: 0x22d3ee,
-  running: 0x00f0ff,
+  failed: 0xe86a7c,
+  pending: 0x6fc3d8,
+  running: 0x5cc6da,
 };
 
 const STATE_WORD: Record<SceneNodeState, string> = {
@@ -130,6 +149,7 @@ type SyncData = {
   selectedId: string | null;
   highlightId: string | null;
   coreState: SceneNodeState;
+  coreVisual: CoreVisual;
   coreLabel: string;
   animate: boolean;
   pulseKey: string | null;
@@ -138,6 +158,8 @@ type SyncData = {
 const RING_DEFS = [
   { radius: 3.2, tilt: 0.1, speed: (Math.PI * 2) / 90 },
   { radius: 4.6, tilt: -0.21, speed: -(Math.PI * 2) / 115 },
+  // Outer standby layer: background units drift slowest, furthest out.
+  { radius: 5.9, tilt: 0.34, speed: (Math.PI * 2) / 165 },
 ] as const;
 
 const OVERVIEW_POS = new THREE.Vector3(0, 5.2, 10.5);
@@ -170,28 +192,34 @@ export default function OrbitalScene3D({
   nodes,
   selectedId,
   coreState,
+  coreVisual = "NO_SIGNAL",
   coreLabel,
   animate,
-  hudTime,
   trackingLabel,
   highlightId,
   syncPulseKey,
   onSelect,
   onHover,
   onWebglFail,
+  qualityTier = "HIGH",
+  visualConfig,
+  onSceneFps,
 }: {
   nodes: SceneNode[];
   selectedId: string | null;
   coreState: SceneNodeState;
+  coreVisual?: CoreVisual;
   coreLabel: string;
   animate: boolean;
-  hudTime: string;
   trackingLabel: string;
   highlightId?: string | null;
   syncPulseKey?: string | null;
   onSelect: (id: string | null) => void;
   onHover?: (id: string | null) => void;
   onWebglFail: () => void;
+  qualityTier?: QualityTier;
+  visualConfig?: VisualConfig;
+  onSceneFps?: (fps: number) => void;
 }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const apiRef = useRef<{ sync: (d: SyncData) => void } | null>(null);
@@ -201,6 +229,8 @@ export default function OrbitalScene3D({
   onHoverRef.current = onHover;
   const onFailRef = useRef(onWebglFail);
   onFailRef.current = onWebglFail;
+  const onSceneFpsRef = useRef(onSceneFps);
+  onSceneFpsRef.current = onSceneFps;
 
   // Latest props for the scene's sync entry point (idempotent, cheap).
   const dataRef = useRef<SyncData>({
@@ -208,6 +238,7 @@ export default function OrbitalScene3D({
     selectedId,
     highlightId: highlightId ?? null,
     coreState,
+    coreVisual,
     coreLabel,
     animate,
     pulseKey: syncPulseKey ?? null,
@@ -217,10 +248,38 @@ export default function OrbitalScene3D({
     selectedId,
     highlightId: highlightId ?? null,
     coreState,
+    coreVisual,
     coreLabel,
     animate,
     pulseKey: syncPulseKey ?? null,
   };
+  // Scene sync is gated on a structural key: the static scene only
+  // rebuilds node/core state when a snapshot (or selection / core
+  // state / pulse) actually changes — never on a clock re-render.
+  const syncKeyRef = useRef<string | null>(null);
+
+  // Isolated HUD clock: this tiny span ticks on its own and never
+  // touches the scene graph (previously it dragged a full React
+  // re-render + scene sync in five times a second).
+  const [hudNow, setHudNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setHudNow(Date.now()), 1_000);
+    return () => window.clearInterval(t);
+  }, []);
+  const hudClock = (() => {
+    const d = new Date(hudNow);
+    try {
+      return new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Dhaka",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(d);
+    } catch {
+      return d.toLocaleTimeString();
+    }
+  })();
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -239,11 +298,27 @@ export default function OrbitalScene3D({
       window.matchMedia("(pointer: coarse)").matches;
     const smallScreen = Math.min(window.innerWidth, window.innerHeight) < 560;
     const lowTier = coarsePointer || smallScreen;
+    /* Evolving-system tiers: App remounts this scene when the tier,
+       flags, or module set changes, so mount-time params are current.
+       Each visual system below is an independent module gated by its
+       own flag — toggling one never touches the others. */
+    const tierP = TIER_PARAMS[qualityTier] ?? TIER_PARAMS.HIGH;
+    const mods = visualConfig?.modules;
+    const flags = visualConfig?.flags;
+    const modParticles = (mods?.particleFields ?? true) && (flags?.ENABLE_3D_PARTICLES ?? true);
+    const modOrbits = mods?.orbitalLayers ?? true;
+    const modStreams = mods?.dataStreams ?? true;
+    const modRings = mods?.holographicRings ?? true;
+    const modPulses = mods?.energyPulses ?? true;
+    const modGrid = mods?.backgroundGrid ?? true;
+    const dynamicOrbits = flags?.ENABLE_DYNAMIC_ORBITS ?? true;
+    const advancedLighting = (flags?.ENABLE_ADVANCED_LIGHTING ?? true) && tierP.lighting !== "basic";
+    const bloomOn = tierP.bloom && advancedLighting;
 
     renderer.setClearColor(0x04070c, 1);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.95;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowTier ? 1.25 : 2));
+    renderer.toneMappingExposure = 0.88;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, tierP.pixelRatioCap));
     renderer.domElement.style.position = "absolute";
     renderer.domElement.style.inset = "0";
     mount.appendChild(renderer.domElement);
@@ -256,7 +331,7 @@ export default function OrbitalScene3D({
     mount.appendChild(labelRenderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x04060b, 0.014);
+    scene.fog = new THREE.FogExp2(0x04060b, 0.0095);
 
     const camera = new THREE.PerspectiveCamera(
       45,
@@ -264,14 +339,14 @@ export default function OrbitalScene3D({
       0.1,
       300,
     );
-    // Pull the overview back until the whole orbit fits the frame: the
-    // outer ring (r=4.6) plus node labels must clear both axes —
+      // Pull the overview back until the whole orbit fits the frame: the
+    // outer ring (r=5.9) plus node labels must clear both axes —
     // including nodes swinging through the near side of the orbit,
     // where perspective projects them widest. Narrow stages get an
     // extra pull-back so nothing crops at the right edge.
     const fitOverviewPos = (w: number, h: number) => {
       const aspect = Math.max(0.4, w / Math.max(1, h));
-      const fitFactor = aspect >= 1.25 ? 1.18 : aspect >= 1 ? 1.55 : 1.95;
+      const fitFactor = aspect >= 1.25 ? 1.42 : aspect >= 1 ? 1.85 : 2.3;
       const widthFactor = w < 420 ? 1.22 : w < 560 ? 1.1 : 1;
       return OVERVIEW_POS.clone().multiplyScalar(fitFactor * widthFactor);
     };
@@ -290,9 +365,15 @@ export default function OrbitalScene3D({
     controls.autoRotate = false;
     controls.target.copy(ORIGIN);
 
-    // No real point lights — emissive materials + additive glow sprites
-    // carry the look; a soft ambient keeps the dark faces readable.
-    scene.add(new THREE.AmbientLight(0x8899bb, 2.0));
+    // No real point lights on lower tiers — emissive materials + additive
+    // glow sprites carry the look; a soft ambient keeps dark faces readable.
+    // Advanced lighting (HIGH/ULTRA + flag) adds one core point light.
+    scene.add(new THREE.AmbientLight(0x8899bb, tierP.lighting === "basic" ? 2.0 : 1.6));
+    if (advancedLighting) {
+      const coreLight = new THREE.PointLight(0x5cc6da, tierP.lighting === "advanced" ? 30 : 16, 18, 1.6);
+      coreLight.position.set(0, 0.6, 0);
+      scene.add(coreLight);
+    }
 
     const glowTex = makeGlowTexture();
 
@@ -301,7 +382,7 @@ export default function OrbitalScene3D({
     scene.add(coreGroup);
 
     const coreUniforms = {
-      uRim: { value: new THREE.Color(0x00f5ff) },
+      uRim: { value: new THREE.Color(0x5cc6da) },
       uCore: { value: new THREE.Color(0x02060c) },
       uPulse: { value: 1 },
     };
@@ -337,7 +418,7 @@ export default function OrbitalScene3D({
     const innerMesh = new THREE.Mesh(
       new THREE.IcosahedronGeometry(0.68, 1),
       new THREE.MeshBasicMaterial({
-        color: 0x00f5ff,
+        color: 0x5cc6da,
         transparent: true,
         opacity: 0.4,
         blending: THREE.AdditiveBlending,
@@ -349,30 +430,48 @@ export default function OrbitalScene3D({
 
     const coreRingGeo = new THREE.TorusGeometry(1.7, 0.015, 8, 128);
     const coreRingMat = new THREE.MeshBasicMaterial({
-      color: 0x00f5ff,
+      color: 0x5cc6da,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.4,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
     const coreRing1 = new THREE.Mesh(coreRingGeo, coreRingMat);
     coreRing1.rotation.set(1.15, 0.2, 0);
+    coreRing1.visible = modRings;
     const coreRing2 = new THREE.Mesh(coreRingGeo, coreRingMat.clone());
-    (coreRing2.material as THREE.MeshBasicMaterial).opacity = 0.35;
+    (coreRing2.material as THREE.MeshBasicMaterial).opacity = 0.26;
     coreRing2.rotation.set(0.4, 1.05, 0.3);
+    coreRing2.visible = modRings;
     coreGroup.add(coreRing1, coreRing2);
 
-    const coreGlow = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: glowTex,
-        color: 0x00f5ff,
+    // Energy ring: a wider, fainter halo that breathes with the core
+    // state — the command-center "powered field" around the CORE.
+    const energyRing = new THREE.Mesh(
+      new THREE.TorusGeometry(2.35, 0.008, 8, 160),
+      new THREE.MeshBasicMaterial({
+        color: 0x5cc6da,
         transparent: true,
-        opacity: 0.34,
+        opacity: 0.16,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       }),
     );
-    coreGlow.scale.setScalar(4.3);
+    energyRing.rotation.set(1.35, 0.15, 0.2);
+    energyRing.visible = modPulses;
+    coreGroup.add(energyRing);
+
+    const coreGlow = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: glowTex,
+        color: 0x5cc6da,
+        transparent: true,
+        opacity: 0.18,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }),
+    );
+    coreGlow.scale.setScalar(3.9);
     coreGroup.add(coreGlow);
 
     const coreLabelEl = document.createElement("div");
@@ -417,26 +516,28 @@ export default function OrbitalScene3D({
       const guides = new THREE.LineSegments(
         new THREE.BufferGeometry().setFromPoints(pts),
         new THREE.LineBasicMaterial({
-          color: 0x00f5ff,
+          color: 0x5cc6da,
           transparent: true,
-          opacity: 0.12,
+          opacity: 0.08,
           depthWrite: false,
         }),
       );
+      guides.visible = modOrbits;
       scene.add(guides);
     }
 
     /* ----- holographic grid floor ----- */
-    const grid = new THREE.PolarGridHelper(7.5, 12, 6, 72, 0x00f5ff, 0x0e5a66);
+    const grid = new THREE.PolarGridHelper(7.5, 12, 6, 72, 0x5cc6da, 0x0e5a66);
     grid.position.y = -2.3;
+    grid.visible = modGrid;
     const gridMat = grid.material as THREE.Material;
     gridMat.transparent = true;
-    gridMat.opacity = 0.16;
+    gridMat.opacity = 0.06;
     gridMat.depthWrite = false;
     scene.add(grid);
 
-    /* ----- starfield ----- */
-    const starCount = lowTier ? 1200 : 4000;
+    /* ----- starfield (particle-fields module) ----- */
+    const starCount = modParticles ? tierP.particleCount : 0;
     const starPos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
       const r = 26 + Math.random() * 60;
@@ -452,35 +553,37 @@ export default function OrbitalScene3D({
       starGeo,
       new THREE.PointsMaterial({
         color: 0x9fdcff,
-        size: 0.55,
+        size: 0.5,
         map: glowTex,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.38,
         sizeAttenuation: true,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       }),
     );
+    stars.visible = modParticles;
     scene.add(stars);
 
-    /* ----- beams + packets ----- */
+    /* ----- beams + packets (data-streams module) ----- */
     const beams = new THREE.LineSegments(
       new THREE.BufferGeometry(),
       new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.32,
+        opacity: 0.12,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       }),
     );
     beams.frustumCulled = false;
+    beams.visible = modStreams;
     scene.add(beams);
 
     const selectedBeam = new THREE.Line(
       new THREE.BufferGeometry(),
       new THREE.LineBasicMaterial({
-        color: 0x00f5ff,
+        color: 0x5cc6da,
         transparent: true,
         opacity: 0.9,
         blending: THREE.AdditiveBlending,
@@ -498,24 +601,25 @@ export default function OrbitalScene3D({
         map: glowTex,
         vertexColors: true,
         transparent: true,
-        opacity: 0.95,
+        opacity: 0.75,
         sizeAttenuation: true,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       }),
     );
     packets.frustumCulled = false;
+    packets.visible = modStreams && tierP.connectionAnimation;
     scene.add(packets);
 
-    /* ----- composer (desktop tier only) ----- */
+    /* ----- composer (bloom: HIGH/ULTRA + advanced-lighting flag) ----- */
     let composer: EffectComposer | null = null;
-    if (!lowTier) {
+    if (bloomOn) {
       composer = new EffectComposer(renderer);
-      composer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      composer.setPixelRatio(Math.min(window.devicePixelRatio || 1, tierP.pixelRatioCap));
       composer.addPass(new RenderPass(scene, camera));
       const bloom = new UnrealBloomPass(
         new THREE.Vector2(mount.clientWidth, mount.clientHeight),
-        0.65,
+        tierP.bloomStrength,
         0.35,
         0.85,
       );
@@ -583,7 +687,7 @@ export default function OrbitalScene3D({
         new THREE.MeshStandardMaterial({
           color: 0x0b1118,
           emissive: color,
-          emissiveIntensity: 1.2,
+          emissiveIntensity: 0.72,
           roughness: 0.35,
           metalness: 0.1,
           flatShading: true,
@@ -597,7 +701,7 @@ export default function OrbitalScene3D({
           color,
           wireframe: true,
           transparent: true,
-          opacity: 0.38,
+          opacity: 0.26,
         }),
       );
       wire.scale.setScalar(1.12);
@@ -613,6 +717,7 @@ export default function OrbitalScene3D({
         }),
       );
       ringMesh.rotation.set(1.25 + Math.random() * 0.5, 0.3, 0);
+      ringMesh.visible = modRings;
 
       // Countdown arc: a torus whose shader fills clockwise from the
       // top as the next run approaches (uv.x runs around the ring).
@@ -655,12 +760,15 @@ export default function OrbitalScene3D({
           map: glowTex,
           color,
           transparent: true,
-          opacity: sn.state === "disabled" ? 0.18 : 0.32,
+          opacity: sn.state === "disabled" ? 0.06 : 0.10,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         }),
       );
-      glow.scale.setScalar(1.3);
+      // Low-tier (phone) stages pack the fleet into a small frame:
+      // smaller, dimmer halos so adjacent sprites never stack into
+      // one merged wash.
+      glow.scale.setScalar(lowTier ? 0.9 : 1.15);
 
       const labelEl = document.createElement("div");
       labelEl.className = "mc-node-label";
@@ -819,16 +927,27 @@ export default function OrbitalScene3D({
         lastPulseKey = d.pulseKey;
         beamPulse = 1;
       }
-      // Structural changes: ring assignment by alternating index.
-      const ringCounts = [0, 0];
-      for (let i = 0; i < d.nodes.length; i++) ringCounts[i % 2] = (ringCounts[i % 2] ?? 0) + 1;
+      // Orbital layers by operational priority — never by list order:
+      // failed/running/pending ride the inner ring (closest to CORE),
+      // active/paused the normal ring, disabled the outer standby ring.
+      const ringForState = (st: SceneNodeState): number =>
+        st === "failed" || st === "running" || st === "pending"
+          ? 0
+          : st === "disabled"
+            ? 2
+            : 1;
+      const ringCounts = [0, 0, 0];
+      for (const sn of d.nodes) {
+        const ri = ringForState(sn.state);
+        ringCounts[ri] = (ringCounts[ri] ?? 0) + 1;
+      }
       const seen = new Set<string>();
-      const ordinals = [0, 0];
+      const ordinals = [0, 0, 0];
       for (let i = 0; i < d.nodes.length; i++) {
         const sn = d.nodes[i];
         if (!sn) continue;
         seen.add(sn.id);
-        const ringIndex = i % 2;
+        const ringIndex = ringForState(sn.state);
         const existing = nodeMap.get(sn.id);
         if (!existing) {
           const ordinal = ordinals[ringIndex] ?? 0;
@@ -904,16 +1023,34 @@ export default function OrbitalScene3D({
         packetsColorAttr.needsUpdate = true;
       }
 
-      // Core follows NewsFlow's own status (set by the caller).
-      const coreColor = new THREE.Color(STATE_HEX[d.coreState]);
+      // Core renders the six-state AI core (truthful mapping lives in
+      // App.deriveCoreState; here we only tint + label it). The rim
+      // colour comes from the core visual, not the node palette.
+      // NO SIGNAL: dim the halo + inner mesh and keep the truthful
+      // screen-reader label — the core asserts nothing without data.
+      const noSignal = d.coreVisual === "NO_SIGNAL";
+      const coreColor = new THREE.Color(CORE_HEX[d.coreVisual] ?? STATE_HEX[d.coreState]);
       coreUniforms.uRim.value.copy(coreColor);
       (innerMesh.material as THREE.MeshBasicMaterial).color.copy(coreColor);
+      (innerMesh.material as THREE.MeshBasicMaterial).opacity = noSignal ? 0.16 : 0.4;
       (coreRing1.material as THREE.MeshBasicMaterial).color.copy(coreColor);
+      (coreRing1.material as THREE.MeshBasicMaterial).opacity = noSignal ? 0.18 : 0.4;
       (coreRing2.material as THREE.MeshBasicMaterial).color.copy(coreColor);
+      (coreRing2.material as THREE.MeshBasicMaterial).opacity = noSignal ? 0.12 : 0.26;
+      (energyRing.material as THREE.MeshBasicMaterial).color.copy(coreColor);
+      (energyRing.material as THREE.MeshBasicMaterial).opacity = noSignal ? 0.05 : 0.16;
       (coreGlow.material as THREE.SpriteMaterial).color.copy(coreColor);
+      (coreGlow.material as THREE.SpriteMaterial).opacity = noSignal ? 0.07 : 0.18;
       coreLabelBottom.textContent = d.coreLabel;
       coreLabelBottom.style.color = `#${coreColor.getHexString()}`;
       coreLabelEl.style.borderColor = `rgba(${Math.round(coreColor.r * 255)}, ${Math.round(coreColor.g * 255)}, ${Math.round(coreColor.b * 255)}, 0.5)`;
+      coreLabelEl.setAttribute("role", "status");
+      coreLabelEl.setAttribute(
+        "aria-label",
+        noSignal
+          ? "AI core: no signal — waiting for first snapshot"
+          : `AI core state: ${d.coreLabel}`,
+      );
 
       // Selection transitions drive the camera.
       if (d.selectedId !== currentSelected) {
@@ -953,7 +1090,7 @@ export default function OrbitalScene3D({
     let fpsWindowT = 0;
     let fpsFrames = 0;
     let badWindows = 0;
-    let qualityTier = composer ? 0 : 1;
+    let qualityStep = composer ? 0 : 1;
     let liteFallbackFired = false;
 
     const frame = (now: number) => {
@@ -971,19 +1108,20 @@ export default function OrbitalScene3D({
         fpsFrames++;
         if (fpsWindowT >= 1) {
           const fps = fpsFrames / fpsWindowT;
+          onSceneFpsRef.current?.(fps);
           fpsWindowT = 0;
           fpsFrames = 0;
           if (fps < 45) {
             badWindows++;
             if (badWindows >= 2) {
               badWindows = 0;
-              if (qualityTier === 0 && composer) {
+              if (qualityStep === 0 && composer) {
                 composer = null;
-                qualityTier = 1;
-              } else if (qualityTier === 1) {
+                qualityStep = 1;
+              } else if (qualityStep === 1) {
                 renderer.setPixelRatio(1.25);
                 renderer.setSize(Math.max(1, mount.clientWidth), Math.max(1, mount.clientHeight), false);
-                qualityTier = 2;
+                qualityStep = 2;
               } else if (!liteFallbackFired) {
                 liteFallbackFired = true;
                 onFailRef.current();
@@ -998,9 +1136,9 @@ export default function OrbitalScene3D({
       // Orbit motion eases to a crawl under the pointer / while inspecting.
       const frozen = currentSelected !== null || pointerOver;
       const speedScale = frozen ? 0.12 : 1;
-      beamPulse = Math.max(0, beamPulse - dt * 0.7);
-      (beams.material as THREE.LineBasicMaterial).opacity = 0.3 + beamPulse * 0.5;
-      (packets.material as THREE.PointsMaterial).opacity = 0.95;
+      beamPulse = modPulses ? Math.max(0, beamPulse - dt * 0.7) : 0;
+      (beams.material as THREE.LineBasicMaterial).opacity = 0.16 + beamPulse * 0.3;
+      (packets.material as THREE.PointsMaterial).opacity = 0.75;
 
       let idx = 0;
       const beamPosAttr = beams.geometry.getAttribute("position") as THREE.BufferAttribute | undefined;
@@ -1009,54 +1147,57 @@ export default function OrbitalScene3D({
         const n = nodeMap.get(sn.id);
         if (!n) continue;
         const def = RING_DEFS[n.ringIndex] ?? RING_DEFS[0];
-        if (def && d.animate) n.angle += def.speed * dt * speedScale;
+        if (def && d.animate && dynamicOrbits) n.angle += def.speed * dt * speedScale;
         const radius = def ? def.radius : 3.2;
         n.group.position.set(Math.cos(n.angle) * radius, 0, Math.sin(n.angle) * radius);
         n.group.getWorldPosition(tmpV);
 
         // Status pulse patterns (double-encoded with color for clarity).
+        // Amplitudes kept restrained: saturated colour is reserved for
+        // the small emissive core, not a large-area halo.
         const coreMat = n.core.material as THREE.MeshStandardMaterial;
         const glowMat = n.glow.material as THREE.SpriteMaterial;
         const ringMat = n.ringMesh.material as THREE.MeshBasicMaterial;
-        let intensity = 1.2;
-        let glowOpacity = 0.32;
+        let intensity = 1.0;
+        let glowOpacity = 0.17;
         if (d.animate) {
           if (n.state === "active") {
-            intensity = 1.15 + 0.2 * Math.sin(t * 2 + n.phase);
-            glowOpacity = 0.32 + 0.07 * Math.sin(t * 2 + n.phase);
+            intensity = 0.98 + 0.14 * Math.sin(t * 2 + n.phase);
+            glowOpacity = 0.17 + 0.04 * Math.sin(t * 2 + n.phase);
           } else if (n.state === "pending") {
             // Queued: steady teal breathing — waiting, not executing.
-            intensity = 0.95 + 0.35 * Math.sin(t * 1.6 + n.phase);
-            glowOpacity = 0.3 + 0.1 * Math.sin(t * 1.6 + n.phase);
+            intensity = 0.85 + 0.25 * Math.sin(t * 1.6 + n.phase);
+            glowOpacity = 0.16 + 0.05 * Math.sin(t * 1.6 + n.phase);
           } else if (n.state === "running") {
             // Executing now: fast bright heartbeat, unmistakably live.
-            intensity = 1.7 + 0.65 * Math.sin(t * Math.PI * 3 + n.phase);
-            glowOpacity = 0.5 + 0.2 * Math.sin(t * Math.PI * 3 + n.phase);
+            intensity = 1.5 + 0.5 * Math.sin(t * Math.PI * 3 + n.phase);
+            glowOpacity = 0.3 + 0.1 * Math.sin(t * Math.PI * 3 + n.phase);
           } else if (n.state === "paused") {
-            intensity = 0.8 + 0.45 * Math.sin(t * Math.PI + n.phase);
-            glowOpacity = 0.24 + 0.1 * Math.sin(t * Math.PI + n.phase);
+            intensity = 0.72 + 0.35 * Math.sin(t * Math.PI + n.phase);
+            glowOpacity = 0.12 + 0.05 * Math.sin(t * Math.PI + n.phase);
           } else if (n.state === "failed") {
-            intensity = 1.2 + 0.8 * Math.sin(t * Math.PI * 4 + n.phase);
-            glowOpacity = 0.38 + 0.18 * Math.sin(t * Math.PI * 4 + n.phase);
+            intensity = 1.05 + 0.6 * Math.sin(t * Math.PI * 4 + n.phase);
+            glowOpacity = 0.24 + 0.1 * Math.sin(t * Math.PI * 4 + n.phase);
           } else {
-            intensity = 0.35;
-            glowOpacity = 0.16;
+            intensity = 0.3;
+            glowOpacity = 0.09;
           }
         } else if (n.state === "disabled") {
-          intensity = 0.35;
-          glowOpacity = 0.16;
+          intensity = 0.3;
+          glowOpacity = 0.09;
         } else if (n.state === "running") {
-          intensity = 1.8;
-          glowOpacity = 0.5;
+          intensity = 1.6;
+          glowOpacity = 0.3;
         }
         const isSel = sn.id === currentSelected;
         const isHover = sn.id === hoveredId || sn.id === d.highlightId;
-        if (isSel) intensity += 0.6;
+        if (isSel) intensity += 0.5;
         coreMat.emissiveIntensity = intensity;
         glowMat.opacity =
-          (n.state === "disabled" && !isSel ? 0.16 : glowOpacity) + beamPulse * 0.3;
+          ((n.state === "disabled" && !isSel ? 0.09 : glowOpacity) + beamPulse * 0.18) *
+          (lowTier ? 0.65 : 1);
         glowMat.needsUpdate = true;
-        ringMat.opacity = isSel ? 1 : isHover ? 0.95 : 0.7;
+        ringMat.opacity = isSel ? 0.9 : isHover ? 0.8 : 0.55;
         if ((n.state === "failed" || n.state === "running") && d.animate) {
           const speed = n.state === "running" ? Math.PI * 3 : Math.PI * 4;
           const amp = n.state === "running" ? 0.22 : 0.16;
@@ -1068,7 +1209,7 @@ export default function OrbitalScene3D({
 
         // Countdown arc fill (hidden when the next run is unknown).
         const frac = runFrac(sn, nowMs);
-        n.arc.visible = frac !== null;
+        n.arc.visible = frac !== null && modRings;
         if (frac !== null) {
           const u = (n.arc.material as THREE.ShaderMaterial).uniforms["uFrac"];
           if (u) u.value = frac;
@@ -1081,7 +1222,7 @@ export default function OrbitalScene3D({
           n.ringMesh.rotation.z += dt * 0.7;
           n.wire.rotation.y += dt * 0.25;
         }
-        n.glow.scale.setScalar(isSel ? 1.7 : 1.3);
+        n.glow.scale.setScalar(isSel ? (lowTier ? 1.2 : 1.45) : lowTier ? 0.9 : 1.15);
 
         // Stash this label's world position for the legibility pass below.
         n.labelObj.getWorldPosition(projV);
@@ -1179,17 +1320,28 @@ export default function OrbitalScene3D({
       labelCands.length = 0;
 
       // Core life: pulse + counter-rotating rings (+ ingest flare).
-      const pulse = d.animate ? 1 + 0.07 * Math.sin(t * Math.PI * 1.6) : 1;
+      // NO SIGNAL: fully static and dim — no breathing, no spinning
+      // rings, no glow swell. The core asserts nothing without data.
+      const noSignal = d.coreVisual === "NO_SIGNAL";
+      const pulse = d.animate && !noSignal ? 1 + 0.07 * Math.sin(t * Math.PI * 1.6) : 1;
       innerMesh.scale.setScalar(pulse);
-      coreUniforms.uPulse.value =
-        (d.animate ? 0.95 + 0.18 * Math.sin(t * Math.PI * 1.6) : 1) + beamPulse * 0.7;
-      if (d.animate) {
+      coreUniforms.uPulse.value = noSignal
+        ? 0.45
+        : (d.animate ? 0.95 + 0.18 * Math.sin(t * Math.PI * 1.6) : 1) + beamPulse * 0.7;
+      if (d.animate && !noSignal) {
         coreRing1.rotation.z += dt * 0.2;
         coreRing2.rotation.z -= dt * 0.14;
+        energyRing.rotation.z += dt * 0.07;
         coreMesh.rotation.y += dt * 0.1;
+      }
+      if (d.animate) {
         stars.rotation.y += dt * 0.004;
       }
-      coreGlow.scale.setScalar(4.3 + (d.animate ? 0.25 * Math.sin(t * Math.PI * 1.6) : 0) + beamPulse * 0.8);
+      coreGlow.scale.setScalar(
+        noSignal
+          ? 3.2
+          : 3.9 + (d.animate ? 0.25 * Math.sin(t * Math.PI * 1.6) : 0) + beamPulse * 0.8,
+      );
 
       // Camera tween (600ms ease-out) then hand control back.
       if (tween) {
@@ -1239,22 +1391,42 @@ export default function OrbitalScene3D({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Push every render's props into the scene (idempotent).
+  // Push props into the scene only when the sync-relevant key changes
+  // (snapshot content, selection, highlight, core state, pulse). Clock
+  // re-renders of this wrapper leave the scene graph untouched.
   useEffect(() => {
-    apiRef.current?.sync(dataRef.current);
+    const d = dataRef.current;
+    const key = [
+      d.selectedId ?? "",
+      d.highlightId ?? "",
+      d.coreState,
+      d.coreVisual,
+      d.coreLabel,
+      d.animate ? "anim" : "still",
+      d.pulseKey ?? "",
+      d.nodes
+        .map(
+          (n) =>
+            `${n.id}:${n.state}:${n.isNext ? 1 : 0}:${n.nextRunMs ?? ""}:${n.lastRunMs ?? ""}:${n.cadenceMs ?? ""}:${n.code}`,
+        )
+        .join("|"),
+    ].join("~");
+    if (key === syncKeyRef.current) return;
+    syncKeyRef.current = key;
+    apiRef.current?.sync(d);
   });
 
   return (
     <div
       ref={mountRef}
-      className="mc-stage3d relative aspect-square w-full overflow-hidden"
+      className="mc-stage3d relative aspect-square w-full overflow-hidden lg:aspect-[16/10]"
       role="img"
       aria-label="3D orbital view of the agent fleet around the NewsFlow core. Drag to orbit, scroll to zoom, tap a node to inspect it. The fleet list below provides the same selection by keyboard."
     >
       {/* vignette for cockpit depth */}
       <div className="mc-vignette pointer-events-none absolute inset-0 z-10" aria-hidden />
       <span className="pointer-events-none absolute bottom-2 left-3 z-10 font-mono text-[10px] tracking-widest text-[#5b6b80]">
-        DHAKA {hudTime}
+        DHAKA {hudClock}
       </span>
       <span className="pointer-events-none absolute bottom-2 right-3 z-10 font-mono text-[10px] tracking-widest text-[#5b6b80]">
         NODES {nodes.length}

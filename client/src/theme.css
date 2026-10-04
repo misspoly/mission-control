@@ -24,27 +24,27 @@
 
 :root {
   color-scheme: dark;
-  --bg: #04070c;
-  --bg-alt: #071018;
-  --surface: rgba(8, 15, 24, 0.66);
-  --surface-strong: rgba(10, 22, 34, 0.88);
-  --surface-solid: #0a121c;
-  --text: #e6f1ff;
-  --text-muted: #8a9bb0;
-  --text-faint: #5b6b80;
-  --dim: #8a9bb0;
-  --accent: #00f0ff;
-  --accent-2: #7dd7ff;
-  --ok: #00ff88;
-  --warn: #ffb24d;
-  --danger: #ff2d55;
-  --info: #66ddff;
-  --green: #00ff88;
-  --amber: #ffb24d;
-  --red: #ff2d55;
-  --border: rgba(0, 240, 255, 0.14);
-  --border-strong: rgba(0, 240, 255, 0.32);
-  --border-soft: rgba(0, 240, 255, 0.08);
+  --bg: #05080d;
+  --bg-alt: #081018;
+  --surface: rgba(10, 17, 26, 0.72);
+  --surface-strong: rgba(12, 22, 33, 0.9);
+  --surface-solid: #0b141f;
+  --text: #e8eef5;
+  --text-muted: #9aa8ba;
+  --text-faint: #6b7c92;
+  --dim: #9aa8ba;
+  --accent: #5cc6da;
+  --accent-2: #8ec9dc;
+  --ok: #4ecf8f;
+  --warn: #e8a84d;
+  --danger: #e86a7c;
+  --info: #6fc3d8;
+  --green: #4ecf8f;
+  --amber: #e8a84d;
+  --red: #e86a7c;
+  --border: rgba(120, 190, 210, 0.12);
+  --border-strong: rgba(120, 190, 210, 0.24);
+  --border-soft: rgba(120, 190, 210, 0.06);
   --radius: 10px;
   --space-surface: var(--surface);
   --space-surface-alt: var(--surface);
@@ -55,11 +55,11 @@
      Dark mode leans on cyan-tinted translucency; light mode keeps the
      same near-black canvas (product is a dark HUD) but raises surface
      opacity so text contrast stays AA on bright ambient light. */
-  --glass-blur: 14px;
-  --glass-alpha: 0.66;
-  --glass-border-light: rgba(0, 240, 255, 0.22);
-  --glass-border-dark: rgba(0, 240, 255, 0.10);
-  --glass-highlight: rgba(255, 255, 255, 0.06);
+  --glass-blur: 10px;
+  --glass-alpha: 0.72;
+  --glass-border-light: rgba(120, 190, 210, 0.16);
+  --glass-border-dark: rgba(120, 190, 210, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.04);
   /* Motion tokens (150/300ms micro-interactions) */
   --motion-fast: 150ms;
   --motion-base: 300ms;
@@ -70,37 +70,64 @@
   --step-1: clamp(1.05rem, 0.95rem + 0.55vw, 1.35rem);
   --step-2: clamp(1.35rem, 1.1rem + 1.2vw, 2rem);
   --step-3: clamp(1.9rem, 1.4rem + 2.4vw, 3rem);
+  /* ——— PREMIUM PASS 1: depth system (0 background → 5 interaction) ———
+     0 canvas, 1 ambient glow, 2 grid/environment, 3 content panels,
+     4 floating (detail / palette / toasts / health strip), 5 interaction.
+     Tokens only; the existing cyan HUD palette is refined, not replaced. */
+  --depth-0-bg: #05080d;
+  --depth-1-glow-a: rgba(92, 198, 218, 0.025);
+  --depth-1-glow-b: rgba(60, 120, 160, 0.02);
+  --depth-2-grid: rgba(120, 190, 210, 0.016);
+  --depth-3-surface: rgba(10, 17, 26, 0.72);
+  --depth-3-border: rgba(120, 190, 210, 0.12);
+  --depth-3-shadow: 0 6px 20px rgba(0, 0, 0, 0.36), 0 1px 4px rgba(0, 0, 0, 0.22);
+  --depth-4-surface: rgba(12, 22, 33, 0.92);
+  --depth-4-border: rgba(120, 190, 210, 0.18);
+  --depth-4-shadow: 0 12px 32px rgba(0, 0, 0, 0.48), 0 4px 10px rgba(0, 0, 0, 0.28);
+  --depth-5-shadow: 0 0 0 2px rgba(92, 198, 218, 0.45), 0 8px 20px rgba(0, 0, 0, 0.38);
+  --material-highlight: rgba(255, 255, 255, 0.045);
+  --material-inner-glow: rgba(92, 198, 218, 0.018);
+  /* AI core state accents — restrained, never neon-gaming */
+  --core-online: #5cc6da;
+  --core-thinking: #8ec9dc;
+  --core-executing: #4ecf8f;
+  --core-waiting: #8aa8c4;
+  --core-error: #e86a7c;
+  --core-learning: #b3a3d8;
+  /* NO SIGNAL is not a state: the desaturated slate used by the
+     non-operational presentation before the first snapshot exists. */
+  --core-nosignal: #7d8ea3;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #04070c;
-    --surface: rgba(8, 15, 24, 0.66);
-    --surface-solid: #0a121c;
-    --text: #e6f1ff;
-    --dim: #8a9bb0;
-    --border: rgba(0, 240, 255, 0.14);
-    --accent: #00f0ff;
+    --bg: #05080d;
+    --surface: rgba(10, 17, 26, 0.72);
+    --surface-solid: #0b141f;
+    --text: #e8eef5;
+    --dim: #9aa8ba;
+    --border: rgba(120, 190, 210, 0.12);
+    --accent: #5cc6da;
   }
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #04070c;
-    --bg-alt: #071018;
-    --surface: rgba(8, 15, 24, 0.78);
-    --surface-strong: rgba(10, 22, 34, 0.92);
-    --surface-solid: #0a121c;
-    --text: #e6f1ff;
-    --text-muted: #9db2c8;
-    --text-faint: #6f8299;
-    --dim: #8a9bb0;
-    --border: rgba(0, 240, 255, 0.14);
-    --border-strong: rgba(0, 240, 255, 0.36);
-    --accent: #00f0ff;
-    --accent-2: #7dd7ff;
-    --glass-blur: 16px;
-    --glass-alpha: 0.78;
+    --bg: #05080d;
+    --bg-alt: #081018;
+    --surface: rgba(10, 17, 26, 0.8);
+    --surface-strong: rgba(12, 22, 33, 0.94);
+    --surface-solid: #0b141f;
+    --text: #e8eef5;
+    --text-muted: #a8b8c8;
+    --text-faint: #7d8fa3;
+    --dim: #9aa8ba;
+    --border: rgba(120, 190, 210, 0.12);
+    --border-strong: rgba(120, 190, 210, 0.26);
+    --accent: #5cc6da;
+    --accent-2: #8ec9dc;
+    --glass-blur: 12px;
+    --glass-alpha: 0.8;
   }
 }
 
@@ -114,9 +141,9 @@ body {
 
 .mc-grid-bg {
   background-image:
-    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(rgba(92, 198, 218, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(92, 198, 218, 0.018) 1px, transparent 1px);
+  background-size: 36px 36px;
 }
 
 .mc-glass {
@@ -124,7 +151,72 @@ body {
   border: 1px solid var(--border);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 24px rgba(0, 240, 255, 0.03), inset 0 1px 0 var(--glass-highlight);
+  box-shadow: var(--depth-3-shadow), inset 0 1px 0 var(--material-highlight);
+}
+
+/* ——— Depth layers (PASS 1) ——— */
+.mc-depth-3 {
+  background: var(--depth-3-surface);
+  border: 1px solid var(--depth-3-border);
+  box-shadow: var(--depth-3-shadow), inset 0 1px 0 var(--material-highlight);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+.mc-depth-4 {
+  background: var(--depth-4-surface);
+  border: 1px solid var(--depth-4-border);
+  box-shadow: var(--depth-4-shadow), inset 0 1px 0 var(--material-highlight);
+  backdrop-filter: blur(calc(var(--glass-blur) + 2px));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 2px));
+}
+.mc-depth-4-strong {
+  background: rgba(9, 18, 28, 0.96);
+  border: 1px solid rgba(120, 190, 210, 0.22);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.mc-material {
+  position: relative;
+  transform: perspective(900px) rotateX(0.15deg);
+  transform-origin: center top;
+}
+.mc-material::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.055) 0%, transparent 22%);
+  opacity: 0.9;
+}
+.mc-env-glow {
+  background:
+    radial-gradient(ellipse 62% 48% at 50% 0%, var(--depth-1-glow-a) 0%, transparent 62%),
+    radial-gradient(ellipse 48% 42% at 82% 88%, var(--depth-1-glow-b) 0%, transparent 58%),
+    radial-gradient(ellipse 38% 32% at 12% 72%, rgba(92,198,218,0.02) 0%, transparent 60%);
+}
+.mc-env-grid {
+  background-image:
+    linear-gradient(var(--depth-2-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--depth-2-grid) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 46%, transparent 92%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 46%, transparent 92%);
+}
+.mc-env-vignette {
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(2, 5, 9, 0.38) 100%);
+}
+.mc-env-fog {
+  background: linear-gradient(180deg, transparent 62%, rgba(4, 7, 12, 0.62) 100%);
+}
+.mc-parallax-layer {
+  will-change: transform;
+  transition: transform 420ms var(--motion-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-parallax-layer { transition: none !important; transform: none !important; }
+  .mc-material { transform: none !important; }
 }
 
 /* Fluid headline stats (clamp typography) */
@@ -150,13 +242,14 @@ body {
 .mc-layout-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 @media (min-width: 1024px) {
   .mc-layout-grid {
-    grid-template-columns: 260px minmax(0, 1fr) 340px;
+    grid-template-columns: 320px minmax(0, 1fr) 360px;
     grid-template-areas: "fleet stage side" "fleet stage side";
     align-items: start;
+    gap: 1.25rem;
   }
   .mc-area-fleet { grid-area: fleet; }
   .mc-area-stage { grid-area: stage; }
@@ -183,9 +276,9 @@ body {
 }
 .mc-grid-canvas {
   background-image:
-    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(rgba(92, 198, 218, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(92, 198, 218, 0.018) 1px, transparent 1px);
+  background-size: 36px 36px;
 }
 
 /* Skeleton loading — opacity oscillation, not spinner */
@@ -195,7 +288,7 @@ body {
 }
 .mc-skeleton {
   border-radius: 6px;
-  background: linear-gradient(90deg, rgba(0,240,255,0.06), rgba(0,240,255,0.13), rgba(0,240,255,0.06));
+  background: linear-gradient(90deg, rgba(92,198,218,0.04), rgba(92,198,218,0.08), rgba(92,198,218,0.04));
   animation: mc-skeleton-pulse 1.4s ease-in-out infinite;
 }
 .mc-skeleton-line { height: 12px; }
@@ -208,7 +301,8 @@ body {
   gap: 6px;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
 }
 .mc-status-icon {
   display: inline-flex;
@@ -227,8 +321,8 @@ body {
 .mc-status-danger { color: var(--danger); }
 .mc-status-info { color: var(--info); }
 .mc-status-muted { color: var(--text-faint); }
-.mc-status-pending { color: #22d3ee; }
-.mc-status-running { color: #00f0ff; }
+.mc-status-pending { color: #6fc3d8; }
+.mc-status-running { color: #5cc6da; }
 
 /* 44px touch targets for primary controls */
 .mc-touch {
@@ -254,27 +348,28 @@ body {
 }
 
 .mc-hud-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 11px;
-  letter-spacing: 0.18em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--dim);
+  color: var(--text-muted);
 }
 
 /* Phone: panel headings shrink and wrap instead of truncating. */
 @media (max-width: 480px) {
   .mc-hud-label {
     font-size: 10px;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.05em;
   }
 }
 
 /* Corner brackets, rendered as spans inside a relative panel */
 .mc-corner {
   position: absolute;
-  width: 14px;
-  height: 14px;
-  border-color: rgba(0, 240, 255, 0.55);
+  width: 10px;
+  height: 10px;
+  border-color: rgba(92, 198, 218, 0.28);
   border-style: solid;
   pointer-events: none;
 }
@@ -288,10 +383,10 @@ body {
 .mc-scanlines {
   background: repeating-linear-gradient(
     0deg,
-    rgba(255, 255, 255, 0.022) 0px,
-    rgba(255, 255, 255, 0.022) 1px,
+    rgba(255, 255, 255, 0.012) 0px,
+    rgba(255, 255, 255, 0.012) 1px,
     transparent 1px,
-    transparent 3px
+    transparent 4px
   );
 }
 
@@ -300,43 +395,54 @@ body {
   100% { transform: translateY(100vh); }
 }
 .mc-scanbar {
-  height: 140px;
-  background: linear-gradient(180deg, transparent, rgba(0, 240, 255, 0.045), transparent);
-  animation: mc-scanmove 8s linear infinite;
+  height: 120px;
+  background: linear-gradient(180deg, transparent, rgba(92, 198, 218, 0.015), transparent);
+  animation: mc-scanmove 10s linear infinite;
 }
 
 /* ---- Motion ---- */
 
 @keyframes mc-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.55); }
-  50% { opacity: 0.75; box-shadow: 0 0 0 6px rgba(0, 240, 255, 0); }
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(92, 198, 218, 0.22); }
+  50% { opacity: 0.85; box-shadow: 0 0 0 4px rgba(92, 198, 218, 0); }
 }
 .mc-live-dot {
-  animation: mc-pulse 2s ease-in-out infinite;
+  animation: mc-pulse 2.4s ease-in-out infinite;
 }
 
 @keyframes mc-pulse-green {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.5), 0 0 12px rgba(0, 255, 136, 0.6); }
-  50% { box-shadow: 0 0 0 7px rgba(0, 255, 136, 0), 0 0 18px rgba(0, 255, 136, 0.9); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(78, 207, 143, 0.10), 0 0 4px rgba(78, 207, 143, 0.12); }
+  50% { box-shadow: 0 0 0 3px rgba(78, 207, 143, 0), 0 0 5px rgba(78, 207, 143, 0.16); }
 }
 .mc-node-active {
   animation: mc-pulse-green 2.4s ease-in-out infinite;
 }
 
+/* Phone stages pack ~30 nodes into a few hundred pixels: pulsing
+   halos on every active unit stack into one neon sheet. Active and
+   pending go static there (border + label still carry the state);
+   running and failed keep their pulse — few enough to stay legible. */
+@media (max-width: 560px) {
+  .mc-node-active,
+  .mc-node-pending {
+    animation: none;
+  }
+}
+
 @keyframes mc-pulse-red {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 45, 85, 0.55), 0 0 12px rgba(255, 45, 85, 0.7); }
-  50% { box-shadow: 0 0 0 7px rgba(255, 45, 85, 0), 0 0 20px rgba(255, 45, 85, 1); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 106, 124, 0.22), 0 0 5px rgba(232, 106, 124, 0.28); }
+  50% { box-shadow: 0 0 0 4px rgba(232, 106, 124, 0), 0 0 8px rgba(232, 106, 124, 0.36); }
 }
 .mc-node-failed {
-  animation: mc-pulse-red 1.6s ease-in-out infinite;
+  animation: mc-pulse-red 1.8s ease-in-out infinite;
 }
 
 /* PENDING: cyan/teal pulsing ring — queued, waiting to execute.
    Ring halo pulses outward; distinct from active (green sphere) and
    running (bright expanding rings) by shape + color + label. */
 @keyframes mc-pulse-pending {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.55), 0 0 10px rgba(34, 211, 238, 0.5); }
-  50% { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0), 0 0 16px rgba(34, 211, 238, 0.85); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(111, 195, 216, 0.20), 0 0 5px rgba(111, 195, 216, 0.18); }
+  50% { box-shadow: 0 0 0 4px rgba(111, 195, 216, 0), 0 0 7px rgba(111, 195, 216, 0.30); }
 }
 .mc-node-pending {
   animation: mc-pulse-pending 2s ease-in-out infinite;
@@ -346,9 +452,9 @@ body {
 /* RUNNING: bright energized core — expanding pulse rings + faster
    heartbeat, unmistakably "happening now". */
 @keyframes mc-pulse-running {
-  0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7), 0 0 18px rgba(0, 240, 255, 0.9), inset 0 0 10px rgba(0, 240, 255, 0.35); }
-  70% { box-shadow: 0 0 0 12px rgba(0, 240, 255, 0), 0 0 26px rgba(0, 240, 255, 1), inset 0 0 14px rgba(0, 240, 255, 0.5); }
-  100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0), 0 0 18px rgba(0, 240, 255, 0.9), inset 0 0 10px rgba(0, 240, 255, 0.35); }
+  0% { box-shadow: 0 0 0 0 rgba(92, 198, 218, 0.26), 0 0 8px rgba(92, 198, 218, 0.32), inset 0 0 6px rgba(92, 198, 218, 0.14); }
+  70% { box-shadow: 0 0 0 7px rgba(92, 198, 218, 0), 0 0 11px rgba(92, 198, 218, 0.38), inset 0 0 7px rgba(92, 198, 218, 0.18); }
+  100% { box-shadow: 0 0 0 0 rgba(92, 198, 218, 0), 0 0 8px rgba(92, 198, 218, 0.32), inset 0 0 6px rgba(92, 198, 218, 0.14); }
 }
 .mc-node-running {
   animation: mc-pulse-running 1.2s ease-out infinite;
@@ -360,7 +466,7 @@ body {
   border-style: dashed !important;
 }
 .mc-timeline-running {
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.75), 0 0 4px rgba(0, 240, 255, 0.9) !important;
+  box-shadow: 0 0 5px rgba(92, 198, 218, 0.32), 0 0 2px rgba(92, 198, 218, 0.4) !important;
 }
 
 @keyframes mc-spin {
@@ -377,11 +483,11 @@ body {
 .mc-radar-sweep {
   background: conic-gradient(
     from 0deg,
-    rgba(0, 240, 255, 0.16) 0deg,
-    rgba(0, 240, 255, 0.04) 55deg,
+    rgba(92, 198, 218, 0.05) 0deg,
+    rgba(92, 198, 218, 0.014) 55deg,
     transparent 90deg
   );
-  animation: mc-sweep 9s linear infinite;
+  animation: mc-sweep 11s linear infinite;
 }
 
 @keyframes mc-blink {
@@ -431,48 +537,48 @@ body {
 /* ---- Polish layer ---- */
 
 ::selection {
-  background: rgba(0, 240, 255, 0.28);
-  color: #e6f1ff;
+  background: rgba(92, 198, 218, 0.22);
+  color: #e8eef5;
 }
 
 .mc-glass {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 240, 255, 0.35) rgba(255, 255, 255, 0.04);
+  scrollbar-color: rgba(92, 198, 218, 0.22) rgba(255, 255, 255, 0.03);
 }
 .mc-glass *::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 .mc-glass *::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.3);
+  background: rgba(92, 198, 218, 0.18);
   border-radius: 3px;
 }
 .mc-glass *::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.02);
 }
 
-/* Panel section headers: hairline rule + leading tick */
+/* Panel section headers: quiet rule, no decorative tick glow */
 .mc-head {
-  border-bottom: 1px solid rgba(0, 240, 255, 0.09);
-  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(120, 190, 210, 0.08);
+  padding-bottom: 10px;
 }
 .mc-head::before {
   content: "";
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   margin-right: 7px;
-  background: rgba(0, 240, 255, 0.55);
-  box-shadow: 0 0 6px rgba(0, 240, 255, 0.5);
+  border-radius: 1px;
+  background: rgba(92, 198, 218, 0.45);
   vertical-align: 1px;
 }
 
-/* Soft core glow behind the orbital stage */
+/* Soft core glow behind the orbital stage — one ambient layer only */
 .mc-core-glow {
   background: radial-gradient(
     circle at 50% 50%,
-    rgba(0, 240, 255, 0.09) 0%,
-    rgba(0, 240, 255, 0.035) 34%,
+    rgba(92, 198, 218, 0.028) 0%,
+    rgba(92, 198, 218, 0.01) 34%,
     transparent 62%
   );
 }
@@ -488,11 +594,11 @@ body {
   transition: width 1s linear;
 }
 
-/* Keyboard focus: visible cyan ring on every interactive element */
+/* Keyboard focus: visible ring on every interactive element */
 .mc-root :focus-visible,
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid rgba(0, 240, 255, 0.85);
+  outline: 2px solid rgba(92, 198, 218, 0.75);
   outline-offset: 2px;
 }
 
@@ -524,9 +630,9 @@ a:focus-visible {
   user-select: none;
   -webkit-user-select: none;
   padding: 2px 5px 3px;
-  background: rgba(3, 10, 16, 0.68);
-  border: 1px solid rgba(120, 200, 255, 0.22);
-  border-radius: 3px;
+  background: rgba(6, 12, 19, 0.72);
+  border: 1px solid rgba(140, 180, 200, 0.18);
+  border-radius: 4px;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   transition: opacity 0.25s ease;
@@ -535,8 +641,8 @@ a:focus-visible {
   font-size: 11px;
   font-weight: 600;
   line-height: 1.1;
-  letter-spacing: 0.08em;
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px currentColor;
+  letter-spacing: 0.06em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 .mc-node-status {
   font-size: 7.5px;
@@ -608,7 +714,7 @@ a:focus-visible {
   background: radial-gradient(
     ellipse at center,
     transparent 52%,
-    rgba(2, 5, 9, 0.42) 100%
+    rgba(2, 5, 9, 0.3) 100%
   );
 }
 
@@ -638,11 +744,11 @@ a:focus-visible {
 }
 .mc-select-flash {
   background:
-    linear-gradient(90deg, rgba(255, 45, 85, 0.1), transparent 30%, transparent 70%, rgba(0, 240, 255, 0.1)),
+    linear-gradient(90deg, rgba(255, 45, 85, 0.1), transparent 30%, transparent 70%, rgba(92, 198, 218, 0.1)),
     repeating-linear-gradient(
       0deg,
-      rgba(0, 240, 255, 0.05) 0px,
-      rgba(0, 240, 255, 0.05) 1px,
+      rgba(92, 198, 218, 0.05) 0px,
+      rgba(92, 198, 218, 0.05) 1px,
       transparent 1px,
       transparent 5px
     );
@@ -665,7 +771,7 @@ a:focus-visible {
   inset-inline: 0;
   top: 0;
   height: 46px;
-  background: linear-gradient(180deg, transparent, rgba(0, 240, 255, 0.09), transparent);
+  background: linear-gradient(180deg, transparent, rgba(92, 198, 218, 0.09), transparent);
   animation: mc-panel-sweep 0.85s ease-out both;
   pointer-events: none;
 }
@@ -707,10 +813,10 @@ a:focus-visible {
 /* Ingest pulse on the 2D core when a fresh snapshot lands */
 @keyframes mc-core-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.55), 0 0 28px rgba(0, 240, 255, 0.35);
+    box-shadow: 0 0 0 0 rgba(92, 198, 218, 0.55), 0 0 28px rgba(92, 198, 218, 0.35);
   }
   100% {
-    box-shadow: 0 0 0 16px rgba(0, 240, 255, 0), 0 0 28px rgba(0, 240, 255, 0.35);
+    box-shadow: 0 0 0 16px rgba(92, 198, 218, 0), 0 0 28px rgba(92, 198, 218, 0.35);
   }
 }
 .mc-core-pulse {
@@ -719,8 +825,8 @@ a:focus-visible {
 
 /* Timeline NOW line: glowing vertical beam */
 .mc-now-line {
-  background: linear-gradient(180deg, rgba(0, 240, 255, 0), rgba(0, 240, 255, 0.85) 12%, rgba(0, 240, 255, 0.85) 88%, rgba(0, 240, 255, 0));
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.65);
+  background: linear-gradient(180deg, rgba(92, 198, 218, 0), rgba(92, 198, 218, 0.7) 12%, rgba(92, 198, 218, 0.7) 88%, rgba(92, 198, 218, 0));
+  box-shadow: 0 0 5px rgba(92, 198, 218, 0.4);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -742,15 +848,15 @@ a:focus-visible {
   100% { opacity: 0; transform: translateX(35%); }
 }
 .mc-ingest-flash {
-  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.9), transparent);
+  background: linear-gradient(90deg, transparent, rgba(92, 198, 218, 0.9), transparent);
   animation: mc-ingest-sweep 1.1s var(--motion-ease) both;
 }
 
 /* "Updated Xs ago" breathes once on each ingest. Texture only: the
    stale amber keeps control of the color. */
 @keyframes mc-updated-glow {
-  0% { text-shadow: 0 0 12px rgba(0, 240, 255, 0.95); }
-  100% { text-shadow: 0 0 0 rgba(0, 240, 255, 0); }
+  0% { text-shadow: 0 0 12px rgba(92, 198, 218, 0.95); }
+  100% { text-shadow: 0 0 0 rgba(92, 198, 218, 0); }
 }
 .mc-updated-pulse {
   animation: mc-updated-glow 0.9s ease-out both;
@@ -771,4 +877,254 @@ a:focus-visible {
   .mc-ingest-flash { animation: none !important; opacity: 0 !important; }
   .mc-updated-pulse { animation: none !important; }
   .mc-toast-in { animation: none !important; }
+}
+
+/* ---- Pass C: command palette, filter carousel, pins (2026-10-04) ---- */
+
+/* Keyboard hint chips (⌘K, ESC, 1–9) */
+.mc-kbd {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.4;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0 4px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+@keyframes mc-palette-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.mc-palette {
+  animation: mc-palette-in 160ms var(--motion-ease) both;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.52), 0 0 0 1px rgba(120, 190, 210, 0.10);
+}
+
+/* Fleet filter carousel: on phone/tablet it becomes a sticky,
+   horizontally scroll-snapping strip of 44px targets; on desktop it
+   wraps inside the rail as before. */
+.mc-filter-scroll {
+  scrollbar-width: none;
+}
+.mc-filter-scroll::-webkit-scrollbar {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .mc-filter-scroll {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .mc-filter-scroll > * {
+    scroll-snap-align: start;
+    flex: none;
+  }
+  .mc-filter-bar {
+    position: sticky;
+    top: var(--mc-header-h, 118px);
+    z-index: 24;
+    background: rgba(7, 16, 24, 0.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(92, 198, 218, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-palette { animation: none !important; }
+}
+
+/* ——— REDESIGN PASS 2026-10-04: command-center components ———
+   Premium ops language: one dominant core, demoted fleet, holographic
+   health rows, drawer/bottom-sheet detail, activity stream. All motion
+   150–300ms ease-out, transform/opacity only, reduced-motion safe. */
+
+/* Layout: stage + live rail on top, fleet demoted to a full-width
+   schedule deck below (it must never compete with the core). */
+@media (min-width: 1024px) {
+  .mc-layout-grid {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-areas: "stage side" "fleet fleet";
+  }
+}
+
+/* Agent detail: right drawer on desktop, bottom sheet on phone. */
+@keyframes mc-drawer-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes mc-sheet-in {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes mc-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.mc-drawer {
+  animation: mc-drawer-in 300ms var(--motion-ease) both;
+}
+.mc-backdrop {
+  animation: mc-backdrop-in 200ms ease both;
+}
+@media (max-width: 767px) {
+  .mc-drawer {
+    animation: mc-sheet-in 300ms var(--motion-ease) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-drawer, .mc-backdrop { animation: none !important; }
+}
+
+/* Activity stream: newest entries settle in, never bounce. */
+@keyframes mc-feed-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.mc-feed-item {
+  animation: mc-feed-in 240ms var(--motion-ease) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-feed-item { animation: none !important; }
+}
+
+/* Next Up: the imminent run carries one quiet glow, nothing else does. */
+.mc-nextup-hero {
+  box-shadow: inset 0 0 0 1px rgba(92, 198, 218, 0.22), 0 0 18px rgba(92, 198, 218, 0.07);
+}
+
+/* Failed-agent alert: tasteful slow red breathing, errors only. */
+@keyframes mc-alert-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 106, 124, 0); }
+  50% { box-shadow: 0 0 14px rgba(232, 106, 124, 0.16); }
+}
+.mc-alert-panel {
+  animation: mc-alert-breathe 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-alert-panel { animation: none !important; }
+}
+
+/* Health panel rows */
+.mc-health-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid rgba(120, 190, 210, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ——— PASS 1: AI core states + palette premium + particles ———
+   Core states are truthful signals (see deriveCoreState in App.tsx).
+   Each state has a restrained motion/color treatment; never decorative. */
+@keyframes mc-core-breathe {
+  0%, 100% { opacity: 0.88; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.015); }
+}
+@keyframes mc-core-think {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(142, 201, 220, 0.10), 0 0 8px rgba(142, 201, 220, 0.10); }
+  50% { box-shadow: 0 0 0 4px rgba(142, 201, 220, 0), 0 0 10px rgba(142, 201, 220, 0.16); }
+}
+@keyframes mc-core-exec {
+  0% { box-shadow: 0 0 0 0 rgba(78, 207, 143, 0.12), 0 0 9px rgba(78, 207, 143, 0.14); }
+  70% { box-shadow: 0 0 0 6px rgba(78, 207, 143, 0), 0 0 12px rgba(78, 207, 143, 0.18); }
+  100% { box-shadow: 0 0 0 0 rgba(78, 207, 143, 0), 0 0 9px rgba(78, 207, 143, 0.14); }
+}
+@keyframes mc-core-error-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 106, 124, 0.14), 0 0 8px rgba(232, 106, 124, 0.16); }
+  50% { box-shadow: 0 0 0 5px rgba(232, 106, 124, 0), 0 0 12px rgba(232, 106, 124, 0.22); }
+}
+@keyframes mc-core-learn {
+  0%, 100% { box-shadow: 0 0 8px rgba(179, 163, 216, 0.12), inset 0 0 6px rgba(179, 163, 216, 0.06); }
+  50% { box-shadow: 0 0 11px rgba(179, 163, 216, 0.18), inset 0 0 8px rgba(179, 163, 216, 0.09); }
+}
+.mc-core-online { animation: mc-core-breathe 3.6s ease-in-out infinite; }
+.mc-core-thinking { animation: mc-core-think 2.1s ease-in-out infinite; }
+.mc-core-executing { animation: mc-core-exec 1.35s ease-out infinite; }
+.mc-core-waiting { animation: mc-core-breathe 5.2s ease-in-out infinite; opacity: 0.92; }
+.mc-core-error { animation: mc-core-error-pulse 1.55s ease-in-out infinite; }
+.mc-core-learning { animation: mc-core-learn 2.8s ease-in-out infinite; }
+
+/* NO SIGNAL (not a state): dim, desaturated, completely static — no
+   pulse, no breathing, no glow. Distinct from all six asserted states
+   at a glance: the wall is dark and quiet until real data lands. */
+.mc-core-nosignal {
+  animation: none !important;
+  opacity: 0.78;
+  filter: saturate(0.35);
+}
+.mc-core-chip-nosignal {
+  border-style: dashed;
+}
+
+.mc-core-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.mc-core-chip .mc-core-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  flex: none;
+}
+
+/* Premium palette: depth-4 floating panel, refined type, grouped structure kept */
+.mc-palette-premium {
+  background: rgba(9, 18, 28, 0.97);
+  border: 1px solid rgba(120, 190, 210, 0.20);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.58), 0 6px 16px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(16px) saturate(1.05);
+  -webkit-backdrop-filter: blur(16px) saturate(1.05);
+}
+.mc-palette-premium .mc-palette-head {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent);
+  border-bottom: 1px solid rgba(120, 190, 210, 0.10);
+}
+.mc-palette-premium input {
+  letter-spacing: 0.01em;
+}
+.mc-palette-premium [role="option"] > button {
+  border: 1px solid transparent;
+}
+.mc-palette-premium [role="option"] > button:hover,
+.mc-palette-premium [role="option"] > button:focus-visible {
+  border-color: rgba(92, 198, 218, 0.16);
+}
+
+/* Faint drifting particles (CSS only, GPU-cheap transform/opacity) */
+@keyframes mc-drift {
+  0% { transform: translate3d(0, 0, 0); opacity: 0; }
+  12% { opacity: 0.32; }
+  88% { opacity: 0.22; }
+  100% { transform: translate3d(var(--drift-x, 14px), -18vh, 0); opacity: 0; }
+}
+.mc-particle {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(159, 220, 255, 0.4);
+  box-shadow: 0 0 4px rgba(92, 198, 218, 0.18);
+  animation: mc-drift linear infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-core-online, .mc-core-thinking, .mc-core-executing, .mc-core-waiting, .mc-core-error, .mc-core-learning, .mc-core-nosignal { animation: none !important; }
+  .mc-particle { animation: none !important; opacity: 0.12 !important; }
+  .mc-palette-premium { backdrop-filter: none; -webkit-backdrop-filter: none; }
 }

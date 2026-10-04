@@ -15,6 +15,34 @@
       "when": 1790940119416,
       "tag": "0002_create_snapshots_table",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791093955096,
+      "tag": "0003_add_snapshot_dedup_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791094762038,
+      "tag": "0004_collapse_snapshot_duplicates_by_taken_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791095477034,
+      "tag": "0005_add_ingest_watermark_and_dismissal_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1791096125311,
+      "tag": "0006_add_improvements_table",
+      "breakpoints": true
     }
   ]
 }
