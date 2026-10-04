@@ -1,0 +1,6 @@
+CREATE TABLE snapshots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  taken_at TEXT NOT NULL,
+  received_at INTEGER NOT NULL,
+  payload TEXT NOT NULL
+);

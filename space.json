@@ -1,0 +1,8 @@
+{
+  "runtime": "typescript",
+  "platformVersion": 24,
+  "entry": "client/dist/index.html",
+  "name": "Mission Control",
+  "slug": "mission-control",
+  "managedCronJobs": []
+}

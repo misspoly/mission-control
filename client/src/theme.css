@@ -1,0 +1,774 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+@import "tailwindcss-safe-area";
+
+@theme {
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+  --text-3xl: 30px;
+  --text-3xl--line-height: 36px;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Orbitron", "Space Grotesk", system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #04070c;
+  --bg-alt: #071018;
+  --surface: rgba(8, 15, 24, 0.66);
+  --surface-strong: rgba(10, 22, 34, 0.88);
+  --surface-solid: #0a121c;
+  --text: #e6f1ff;
+  --text-muted: #8a9bb0;
+  --text-faint: #5b6b80;
+  --dim: #8a9bb0;
+  --accent: #00f0ff;
+  --accent-2: #7dd7ff;
+  --ok: #00ff88;
+  --warn: #ffb24d;
+  --danger: #ff2d55;
+  --info: #66ddff;
+  --green: #00ff88;
+  --amber: #ffb24d;
+  --red: #ff2d55;
+  --border: rgba(0, 240, 255, 0.14);
+  --border-strong: rgba(0, 240, 255, 0.32);
+  --border-soft: rgba(0, 240, 255, 0.08);
+  --radius: 10px;
+  --space-surface: var(--surface);
+  --space-surface-alt: var(--surface);
+  --space-muted: var(--dim);
+  --space-border: var(--border);
+  --space-accent: var(--accent);
+  /* Glassmorphism: blur + translucent surface + hairline highlight.
+     Dark mode leans on cyan-tinted translucency; light mode keeps the
+     same near-black canvas (product is a dark HUD) but raises surface
+     opacity so text contrast stays AA on bright ambient light. */
+  --glass-blur: 14px;
+  --glass-alpha: 0.66;
+  --glass-border-light: rgba(0, 240, 255, 0.22);
+  --glass-border-dark: rgba(0, 240, 255, 0.10);
+  --glass-highlight: rgba(255, 255, 255, 0.06);
+  /* Motion tokens (150/300ms micro-interactions) */
+  --motion-fast: 150ms;
+  --motion-base: 300ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Fluid type scale — clamp() for headline stats */
+  --step--1: clamp(0.72rem, 0.68rem + 0.2vw, 0.8rem);
+  --step-0: clamp(0.875rem, 0.83rem + 0.25vw, 1rem);
+  --step-1: clamp(1.05rem, 0.95rem + 0.55vw, 1.35rem);
+  --step-2: clamp(1.35rem, 1.1rem + 1.2vw, 2rem);
+  --step-3: clamp(1.9rem, 1.4rem + 2.4vw, 3rem);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #04070c;
+    --surface: rgba(8, 15, 24, 0.66);
+    --surface-solid: #0a121c;
+    --text: #e6f1ff;
+    --dim: #8a9bb0;
+    --border: rgba(0, 240, 255, 0.14);
+    --accent: #00f0ff;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #04070c;
+    --bg-alt: #071018;
+    --surface: rgba(8, 15, 24, 0.78);
+    --surface-strong: rgba(10, 22, 34, 0.92);
+    --surface-solid: #0a121c;
+    --text: #e6f1ff;
+    --text-muted: #9db2c8;
+    --text-faint: #6f8299;
+    --dim: #8a9bb0;
+    --border: rgba(0, 240, 255, 0.14);
+    --border-strong: rgba(0, 240, 255, 0.36);
+    --accent: #00f0ff;
+    --accent-2: #7dd7ff;
+    --glass-blur: 16px;
+    --glass-alpha: 0.78;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+/* ---- HUD surfaces ---- */
+
+.mc-grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.mc-glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 24px rgba(0, 240, 255, 0.03), inset 0 1px 0 var(--glass-highlight);
+}
+
+/* Fluid headline stats (clamp typography) */
+.mc-stat-hero {
+  font-family: var(--font-display);
+  font-size: var(--step-3);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+}
+.mc-stat-mid {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  line-height: 1.1;
+  font-weight: 600;
+}
+.mc-stat-sub {
+  font-size: var(--step-0);
+  line-height: 1.45;
+}
+
+/* Layout: CSS grid canvas (phased via .mc-layout-grid on <main>) */
+.mc-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 1024px) {
+  .mc-layout-grid {
+    grid-template-columns: 260px minmax(0, 1fr) 340px;
+    grid-template-areas: "fleet stage side" "fleet stage side";
+    align-items: start;
+  }
+  .mc-area-fleet { grid-area: fleet; }
+  .mc-area-stage { grid-area: stage; }
+  .mc-area-side { grid-area: side; }
+}
+.mc-panels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+
+/* Narrow-viewport fit: grid/flex children must be allowed to shrink
+   below their content size — otherwise one wide child stretches the
+   whole column past the phone viewport and the stage (plus its
+   right-aligned corner readouts) crops at the right edge. `clip` (not
+   `hidden`) on the root clips any residual spill without creating a
+   scroll container, so the sticky status bar keeps working. */
+.mc-layout-grid > * {
+  min-width: 0;
+}
+.mc-root {
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+.mc-grid-canvas {
+  background-image:
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Skeleton loading — opacity oscillation, not spinner */
+@keyframes mc-skeleton-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+.mc-skeleton {
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(0,240,255,0.06), rgba(0,240,255,0.13), rgba(0,240,255,0.06));
+  animation: mc-skeleton-pulse 1.4s ease-in-out infinite;
+}
+.mc-skeleton-line { height: 12px; }
+.mc-skeleton-block { height: 64px; }
+
+/* Status semantics: icon + label + color (never color alone) */
+.mc-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+.mc-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.mc-status-ok { color: var(--ok); }
+.mc-status-warn { color: var(--warn); }
+.mc-status-danger { color: var(--danger); }
+.mc-status-info { color: var(--info); }
+.mc-status-muted { color: var(--text-faint); }
+.mc-status-pending { color: #22d3ee; }
+.mc-status-running { color: #00f0ff; }
+
+/* 44px touch targets for primary controls */
+.mc-touch {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Micro-interactions: 150/300ms hover/focus lift */
+.mc-interactive {
+  transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-base) var(--motion-ease), background var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
+}
+.mc-interactive:hover {
+  transform: translateY(-1px);
+}
+.mc-interactive:active {
+  transform: translateY(0);
+  transition-duration: var(--motion-fast);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-interactive { transition: none; }
+  .mc-interactive:hover { transform: none; }
+  .mc-skeleton { animation: none; opacity: 0.7; }
+}
+
+.mc-hud-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* Phone: panel headings shrink and wrap instead of truncating. */
+@media (max-width: 480px) {
+  .mc-hud-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+}
+
+/* Corner brackets, rendered as spans inside a relative panel */
+.mc-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: rgba(0, 240, 255, 0.55);
+  border-style: solid;
+  pointer-events: none;
+}
+.mc-c-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.mc-c-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+.mc-c-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.mc-c-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+/* ---- Scanlines / CRT layer ---- */
+
+.mc-scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.022) 0px,
+    rgba(255, 255, 255, 0.022) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+@keyframes mc-scanmove {
+  0% { transform: translateY(-140px); }
+  100% { transform: translateY(100vh); }
+}
+.mc-scanbar {
+  height: 140px;
+  background: linear-gradient(180deg, transparent, rgba(0, 240, 255, 0.045), transparent);
+  animation: mc-scanmove 8s linear infinite;
+}
+
+/* ---- Motion ---- */
+
+@keyframes mc-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.55); }
+  50% { opacity: 0.75; box-shadow: 0 0 0 6px rgba(0, 240, 255, 0); }
+}
+.mc-live-dot {
+  animation: mc-pulse 2s ease-in-out infinite;
+}
+
+@keyframes mc-pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.5), 0 0 12px rgba(0, 255, 136, 0.6); }
+  50% { box-shadow: 0 0 0 7px rgba(0, 255, 136, 0), 0 0 18px rgba(0, 255, 136, 0.9); }
+}
+.mc-node-active {
+  animation: mc-pulse-green 2.4s ease-in-out infinite;
+}
+
+@keyframes mc-pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 45, 85, 0.55), 0 0 12px rgba(255, 45, 85, 0.7); }
+  50% { box-shadow: 0 0 0 7px rgba(255, 45, 85, 0), 0 0 20px rgba(255, 45, 85, 1); }
+}
+.mc-node-failed {
+  animation: mc-pulse-red 1.6s ease-in-out infinite;
+}
+
+/* PENDING: cyan/teal pulsing ring — queued, waiting to execute.
+   Ring halo pulses outward; distinct from active (green sphere) and
+   running (bright expanding rings) by shape + color + label. */
+@keyframes mc-pulse-pending {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.55), 0 0 10px rgba(34, 211, 238, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0), 0 0 16px rgba(34, 211, 238, 0.85); }
+}
+.mc-node-pending {
+  animation: mc-pulse-pending 2s ease-in-out infinite;
+  border-style: dashed !important;
+}
+
+/* RUNNING: bright energized core — expanding pulse rings + faster
+   heartbeat, unmistakably "happening now". */
+@keyframes mc-pulse-running {
+  0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7), 0 0 18px rgba(0, 240, 255, 0.9), inset 0 0 10px rgba(0, 240, 255, 0.35); }
+  70% { box-shadow: 0 0 0 12px rgba(0, 240, 255, 0), 0 0 26px rgba(0, 240, 255, 1), inset 0 0 14px rgba(0, 240, 255, 0.5); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0), 0 0 18px rgba(0, 240, 255, 0.9), inset 0 0 10px rgba(0, 240, 255, 0.35); }
+}
+.mc-node-running {
+  animation: mc-pulse-running 1.2s ease-out infinite;
+}
+
+/* Timeline: pending = dashed/outlined block, running = solid bright. */
+.mc-timeline-pending {
+  background: transparent !important;
+  border-style: dashed !important;
+}
+.mc-timeline-running {
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.75), 0 0 4px rgba(0, 240, 255, 0.9) !important;
+}
+
+@keyframes mc-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.mc-spin-slow { animation: mc-spin 46s linear infinite; }
+.mc-spin-rev { animation: mc-spin 70s linear infinite reverse; }
+
+@keyframes mc-sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.mc-radar-sweep {
+  background: conic-gradient(
+    from 0deg,
+    rgba(0, 240, 255, 0.16) 0deg,
+    rgba(0, 240, 255, 0.04) 55deg,
+    transparent 90deg
+  );
+  animation: mc-sweep 9s linear infinite;
+}
+
+@keyframes mc-blink {
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: 0.15; }
+}
+.mc-blink { animation: mc-blink 1.1s steps(1) infinite; }
+
+@keyframes mc-eq {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+.mc-eq-bar {
+  transform-origin: bottom;
+  animation: mc-eq 1.15s ease-in-out infinite;
+}
+
+@keyframes mc-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.mc-fade-in {
+  animation: mc-fade-in 0.45s ease both;
+}
+
+@keyframes mc-boot-out {
+  to { opacity: 0; visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-live-dot,
+  .mc-node-active,
+  .mc-node-failed,
+  .mc-node-pending,
+  .mc-node-running,
+  .mc-spin-slow,
+  .mc-spin-rev,
+  .mc-radar-sweep,
+  .mc-scanbar,
+  .mc-eq-bar,
+  .mc-blink,
+  .mc-fade-in {
+    animation: none !important;
+  }
+}
+
+/* ---- Polish layer ---- */
+
+::selection {
+  background: rgba(0, 240, 255, 0.28);
+  color: #e6f1ff;
+}
+
+.mc-glass {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 240, 255, 0.35) rgba(255, 255, 255, 0.04);
+}
+.mc-glass *::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.mc-glass *::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.3);
+  border-radius: 3px;
+}
+.mc-glass *::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Panel section headers: hairline rule + leading tick */
+.mc-head {
+  border-bottom: 1px solid rgba(0, 240, 255, 0.09);
+  padding-bottom: 8px;
+}
+.mc-head::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  background: rgba(0, 240, 255, 0.55);
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.5);
+  vertical-align: 1px;
+}
+
+/* Soft core glow behind the orbital stage */
+.mc-core-glow {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(0, 240, 255, 0.09) 0%,
+    rgba(0, 240, 255, 0.035) 34%,
+    transparent 62%
+  );
+}
+
+/* Freshness window bar */
+.mc-fresh-track {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.mc-fresh-fill {
+  height: 100%;
+  transition: width 1s linear;
+}
+
+/* Keyboard focus: visible cyan ring on every interactive element */
+.mc-root :focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgba(0, 240, 255, 0.85);
+  outline-offset: 2px;
+}
+
+/* Node press feedback (uses the independent `scale` property so it
+   composes with Tailwind's translate utilities) */
+.mc-node-btn {
+  transition: scale 0.15s ease, box-shadow 0.2s ease;
+}
+.mc-node-btn:active {
+  scale: 0.92;
+}
+
+/* ---- 3D stage (WebGL) ---- */
+
+/* World-space node labels projected over the canvas (CSS2DRenderer).
+   Each label is a small glass chip (dark plate + status-tinted hairline,
+   set inline from the scene) so code + status stay legible over the
+   additive glow instead of dissolving into it. The scene fades far-side
+   labels and hides ones that would collide with a higher-priority chip
+   (selected > hovered > failed > next > paused > active > disabled). */
+.mc-node-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  padding: 2px 5px 3px;
+  background: rgba(3, 10, 16, 0.68);
+  border: 1px solid rgba(120, 200, 255, 0.22);
+  border-radius: 3px;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  transition: opacity 0.25s ease;
+}
+.mc-node-code {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px currentColor;
+}
+.mc-node-status {
+  font-size: 7.5px;
+  letter-spacing: 0.18em;
+  line-height: 1.1;
+  opacity: 0.9;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.9);
+}
+.mc-node-next {
+  display: none;
+  margin-bottom: 1px;
+  padding: 0 3px;
+  background: #e6f1ff;
+  color: #04121c;
+  font-size: 6.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+}
+.mc-core-label {
+  padding: 3px 8px 4px;
+}
+.mc-core-label .mc-node-code {
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  color: #8a9bb0;
+}
+.mc-core-label .mc-node-status {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+.mc-node-label-sel .mc-node-code {
+  font-size: 13px;
+}
+
+/* Small stages: code only — the status word moves to the detail panel,
+   keeping 16 world-space labels legible instead of overlapping. */
+@media (max-width: 560px) {
+  .mc-node-label {
+    padding: 1px 4px 2px;
+  }
+  .mc-node-status {
+    display: none;
+  }
+  .mc-node-code {
+    font-size: 10px;
+  }
+  .mc-core-label .mc-node-status {
+    display: block;
+    font-size: 10px;
+  }
+}
+
+/* In the 3D stage, shrink the projected chips a notch further on very
+   narrow stages so edge nodes keep their labels inside the frame. */
+@media (max-width: 480px) {
+  .mc-stage3d .mc-node-label {
+    transform: scale(0.88);
+  }
+}
+
+.mc-stage3d canvas {
+  display: block;
+}
+
+/* Cockpit vignette over the 3D stage */
+.mc-vignette {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 52%,
+    rgba(2, 5, 9, 0.42) 100%
+  );
+}
+
+/* Selection transition flash: brief RGB-split glitch bars, CP2077-style
+   (chromatic aberration reserved for state changes only). */
+@keyframes mc-select-flash {
+  0% {
+    opacity: 0.85;
+    transform: translateX(0);
+  }
+  18% {
+    opacity: 0.5;
+    transform: translateX(-3px);
+  }
+  36% {
+    opacity: 0.65;
+    transform: translateX(3px);
+  }
+  55% {
+    opacity: 0.25;
+    transform: translateX(-1px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+.mc-select-flash {
+  background:
+    linear-gradient(90deg, rgba(255, 45, 85, 0.1), transparent 30%, transparent 70%, rgba(0, 240, 255, 0.1)),
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 240, 255, 0.05) 0px,
+      rgba(0, 240, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 5px
+    );
+  mix-blend-mode: screen;
+  animation: mc-select-flash 0.38s steps(6) both;
+}
+
+/* Corner-cut chips (45° clipped corner, game-UI panel language) */
+.mc-chip-cut {
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+}
+
+/* Scan sweep across the detail panel when a unit is opened */
+.mc-panel-scan {
+  overflow: hidden;
+}
+.mc-panel-scan::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 46px;
+  background: linear-gradient(180deg, transparent, rgba(0, 240, 255, 0.09), transparent);
+  animation: mc-panel-sweep 0.85s ease-out both;
+  pointer-events: none;
+}
+@keyframes mc-panel-sweep {
+  from {
+    transform: translateY(-52px);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(120px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-select-flash,
+  .mc-panel-scan::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
+/* ---- 3D timeline upgrade (2026-10-04) ---- */
+
+/* Per-node countdown line under the status word in 3D labels */
+.mc-node-nextrun {
+  font-size: 7px;
+  letter-spacing: 0.16em;
+  line-height: 1.1;
+  opacity: 0.8;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.9);
+}
+
+/* Cross-highlight: a node lit from the fleet list / timeline */
+.mc-node-hover {
+  scale: 1.14;
+}
+
+/* Ingest pulse on the 2D core when a fresh snapshot lands */
+@keyframes mc-core-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.55), 0 0 28px rgba(0, 240, 255, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 16px rgba(0, 240, 255, 0), 0 0 28px rgba(0, 240, 255, 0.35);
+  }
+}
+.mc-core-pulse {
+  animation: mc-core-pulse 0.9s ease-out both;
+}
+
+/* Timeline NOW line: glowing vertical beam */
+.mc-now-line {
+  background: linear-gradient(180deg, rgba(0, 240, 255, 0), rgba(0, 240, 255, 0.85) 12%, rgba(0, 240, 255, 0.85) 88%, rgba(0, 240, 255, 0));
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.65);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-core-pulse {
+    animation: none !important;
+  }
+  .mc-node-hover {
+    scale: 1;
+  }
+}
+
+/* ---- Pass B: live feel (2026-10-04) ---- */
+
+/* Ingest flash: a light sweep along the status bar when a fresh
+   snapshot lands. Runs once per ingest (remounted by key). */
+@keyframes mc-ingest-sweep {
+  0% { opacity: 0; transform: translateX(-35%); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(35%); }
+}
+.mc-ingest-flash {
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.9), transparent);
+  animation: mc-ingest-sweep 1.1s var(--motion-ease) both;
+}
+
+/* "Updated Xs ago" breathes once on each ingest. Texture only: the
+   stale amber keeps control of the color. */
+@keyframes mc-updated-glow {
+  0% { text-shadow: 0 0 12px rgba(0, 240, 255, 0.95); }
+  100% { text-shadow: 0 0 0 rgba(0, 240, 255, 0); }
+}
+.mc-updated-pulse {
+  animation: mc-updated-glow 0.9s ease-out both;
+}
+
+/* Status-flip toast: rises + fades in over 160ms, auto-dismissed. */
+@keyframes mc-toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.mc-toast-in {
+  animation: mc-toast-in 160ms var(--motion-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Pass B motion is still a signal: under reduced motion the flash,
+     the pulse, and the toast entrance all render instantly instead. */
+  .mc-ingest-flash { animation: none !important; opacity: 0 !important; }
+  .mc-updated-pulse { animation: none !important; }
+  .mc-toast-in { animation: none !important; }
+}
